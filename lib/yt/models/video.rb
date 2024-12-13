@@ -6,6 +6,8 @@ module Yt
     # @see https://developers.google.com/youtube/v3/docs/videos
     class Video < Resource
 
+      has_one :localizations_set
+
     ### SNIPPET ###
 
       # @!attribute [r] title
@@ -675,7 +677,34 @@ module Yt
         'application/octet-stream'
       end
 
+      def set_localizations(localizations = {})
+        body = {
+          id: id,
+          localizations: build_localizations_body(localizations)
+        }
+
+        do_update(part: 'localizations', body: body) do |data|
+          @localizations_set = data['localizations']
+        end
+      end
+
+      def available_localizations
+        ensure_complete_snippet
+        @localizations_set || {}
+      end
+
     private
+
+      def build_localizations_body(localizations)
+        {}.tap do |body|
+          localizations.each do |language_code, content|
+            body[language_code] = {
+              title: content[:title],
+              description: content[:description]
+            }
+          end
+        end
+      end
 
       # TODO: instead of having Video, Playlist etc override this method,
       #       they should define *what* can be updated in their own *update*
@@ -687,7 +716,11 @@ module Yt
         snippet = {keys: snippet_keys, sanitize_brackets: true}
         status_keys = [:privacy_status, :embeddable, :license,
           :public_stats_viewable, :publish_at, :self_declared_made_for_kids]
-        {snippet: snippet, status: {keys: status_keys}}
+        localizations = {
+          keys: [:localizations],
+          sanitize_brackets: true
+        }
+        {localizations: localizations, snippet: snippet, status: {keys: status_keys}}
       end
 
       # For updating video with content owner auth.

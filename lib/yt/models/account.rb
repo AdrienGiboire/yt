@@ -76,13 +76,21 @@ module Yt
         file = URI.open(path_or_url)
         session = resumable_sessions.insert file.size, upload_body(params)
 
+        localizations = params.delete(:localizations)
+
         session.update(body: file) do |data|
-          Yt::Video.new(
+          video = Yt::Video.new(
             id: data['id'],
             snippet: data['snippet'],
             status: data['status'],
             auth: self
           )
+
+          if localizations && !localizations.empty?
+            video.set_localizations(localizations)
+          end
+
+          video
         end
       end
 
@@ -222,7 +230,7 @@ module Yt
       # associated to the uploaded file.
       def upload_body(params = {})
         {}.tap do |body|
-          snippet = params.slice :title, :description, :tags, :category_id
+          snippet = params.slice :title, :description, :tags, :category_id, :default_language
           snippet[:categoryId] = snippet.delete(:category_id) if snippet[:category_id]
           body[:snippet] = snippet if snippet.any?
 
