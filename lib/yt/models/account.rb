@@ -79,6 +79,7 @@ module Yt
         session.update(body: file) do |data|
           Yt::Video.new(
             id: data['id'],
+            localizations: data['localizations'],
             snippet: data['snippet'],
             status: data['status'],
             auth: self
@@ -222,9 +223,11 @@ module Yt
       # associated to the uploaded file.
       def upload_body(params = {})
         {}.tap do |body|
-          snippet = params.slice :title, :description, :tags, :category_id
+          snippet = params.slice :title, :description, :tags, :category_id, :default_language
+          localizations = params.slice :localizations
           snippet[:categoryId] = snippet.delete(:category_id) if snippet[:category_id]
           body[:snippet] = snippet if snippet.any?
+          body[:localizations] = localizations if localizations.any?
 
           privacy_status = params[:privacy_status]
           self_declared_made_for_kids = params[:self_declared_made_for_kids]
