@@ -683,9 +683,7 @@ module Yt
           localizations: build_localizations_body(localizations)
         }
 
-        do_update(part: 'localizations', body: body) do |data|
-          @localizations_set = data['localizations']
-        end
+        do_update(params: { part: 'localizations' }, body: body)
       end
 
       def available_localizations
@@ -696,13 +694,11 @@ module Yt
     private
 
       def build_localizations_body(localizations)
-        {}.tap do |body|
-          localizations.each do |language_code, content|
-            body[language_code] = {
-              title: content[:title],
-              description: content[:description]
-            }
-          end
+        localizations.transform_values do |content|
+          {
+            title: content[:title],
+            description: content[:description]
+          }
         end
       end
 
